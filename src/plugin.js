@@ -6,6 +6,30 @@ import {Parser} from 'nearley/lib/nearley';
 import compile from 'nearley/lib/compile';
 import grammar from 'nearley/lib/nearley-language-bootstrapped';
 
+const BUILTINS = {
+  joiner: `
+    function joiner(d) {
+      return d.join('');
+    }
+  `,
+  arrconcat: `
+    function arrconcat(d) {
+      return [d[0]].concat(d[1]);
+    }
+  `,
+  arrpush: `
+    function arrpush(d) {
+      return d[0].concat([d[1]]);
+    }
+  `,
+  nuller: `
+    function nuller(d) {
+      return null;
+    }
+  `,
+  id: 'id'
+};
+
 function serializeRules(rules) {
   return `[
     ${rules.map(rule => serializeRule(rule)).join(',')}
@@ -13,10 +37,16 @@ function serializeRules(rules) {
 }
 
 function serializeRule(rule) {
+  let {name, symbols, postprocess} = rule;
+
+  if (postprocess && postprocess.builtin) {
+    postprocess = BUILTINS[postprocess.builtin];
+  }
+
   return `{
-    "name": ${JSON.stringify(rule.name)},
-    "symbols": [${rule.symbols.map(serializeSymbol).join(',')}],
-    "postprocess": ${rule.postprocess}
+    "name": ${JSON.stringify(name)},
+    "symbols": [${symbols.map(serializeSymbol).join(',')}],
+    "postprocess": ${postprocess}
   }`;
 }
 
@@ -66,6 +96,9 @@ export default function () {
 
         link.replaceWith(template(`
           var ${name} = (function () {
+            function id(d) {
+              return d[0];
+            }
             ${compiled.body.join('\n')}
             return {
               Lexer: ${compiled.config.lexer},
