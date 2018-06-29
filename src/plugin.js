@@ -44,9 +44,9 @@ function serializeRule(rule) {
   }
 
   return `{
-    "name": ${JSON.stringify(name)},
-    "symbols": [${symbols.map(serializeSymbol).join(',')}],
-    "postprocess": ${postprocess}
+    name: ${JSON.stringify(name)},
+    symbols: [${symbols.map(serializeSymbol).join(',')}]
+    ${postprocess ? ', postprocess: ' + postprocess : ''}
   }`;
 }
 
